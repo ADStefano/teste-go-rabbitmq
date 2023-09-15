@@ -17,6 +17,8 @@ func OpenChannel() (*amqp.Channel, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	ch.Qos(1, 0, false)
 	return ch, nil
 }
 
@@ -24,7 +26,7 @@ func Consume(ch *amqp.Channel, out chan amqp.Delivery) {
 	msgs, erro := ch.Consume(
 		"Teste",
 		"go-consumer",
-		false,
+		true,
 		false,
 		false,
 		false,
@@ -33,10 +35,14 @@ func Consume(ch *amqp.Channel, out chan amqp.Delivery) {
 	if erro != nil {
 		log.Fatal(erro)
 	}
-	for msg := range msgs {
-		out <- msg
-		msg.Ack(false)
-	}
+
+	out <- <-msgs
+	// for msg := range msgs {
+	// 	fmt.Printf("Mensagem recebida: %d", string(msg.Body))
+	// 	out <- <-msgs
+	// 	fmt.Printf("Depois de enviar para o out: %d", out)
+	// 	// msg.Ack(false)
+	// }
 
 }
 
@@ -59,7 +65,6 @@ func Send(queueName string, body string, ch *amqp.Channel) {
 		log.Fatal(erro)
 	}
 
-	log.Printf(" Enviou: %s\n", body)
 }
 
 func DeclareQueue(queueName string, ch *amqp.Channel) error {
